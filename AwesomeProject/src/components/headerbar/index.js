@@ -5,7 +5,7 @@ import {
   StyleSheet,
   ToastAndroid,
   TouchableOpacity,
-  BackHandler
+  BackHandler,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
@@ -17,21 +17,23 @@ const HeaderBar = (props) => {
   const headerbar = useSelector((state) => {
     return state.headerbar;
   });
-  useEffect(()=>{
-    BackHandler.addEventListener('hardwareBackPress', clickBack)
-    return ()=>{
-      BackHandler.removeEventListener('hardwareBackPress',clickBack)
-    }
-  },[])
+  useEffect(() => {
+    // 返回按钮监听事件
+    BackHandler.addEventListener('hardwareBackPress', clickBack);
+    return () => {
+      BackHandler.removeEventListener('hardwareBackPress', clickBack);
+    };
+  }, []);
   // ----------------配置-----------------
   const config = {
     fixed: props.fixed ? true : false,
     opacity: props.opacity === undefined ? 1 : props.opacity,
     backShow: props.backShow || false,
     backIcon: props.backIcon || '',
-    backEvent: props.backEvent || '',
-    backgroundColor: props.backgroundColor || [25,29,66],
-    backgroundOpacity: props.backgroundOpacity===undefined? 1 : props.backgroundOpacity,
+    backEvent: props.backEvent || (() => false),
+    backgroundColor: props.backgroundColor || [25, 29, 66],
+    backgroundOpacity:
+      props.backgroundOpacity === undefined ? 1 : props.backgroundOpacity,
     color: props.color || '#fff',
     title: props.title || '',
     subTitle: props.subTitle || '',
@@ -92,7 +94,7 @@ const HeaderBar = (props) => {
         onPress={(e) => {
           item.event(e);
         }}>
-        {item.icon}
+        <View style={style.rightMenuItem}>{item.icon}</View>
       </TouchableOpacity>,
     );
   });
@@ -104,9 +106,9 @@ const HeaderBar = (props) => {
   const clickBack = (e) => {
     if (config.backEvent && typeof config.backEvent === 'function') {
       const result = config.backEvent(e);
-      return result
+      return result;
     }
-    return false
+    return false;
   };
 
   return (
@@ -165,10 +167,18 @@ const style = StyleSheet.create({
   },
   subTitle: {},
   rightMenu: {
-    marginLeft: 10,
     display: 'flex',
     flexDirection: 'row-reverse',
   },
+  rightMenuItem: {
+    width: 30,
+    height: 30,
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 5,
+  }
 });
 
 export default HeaderBar;

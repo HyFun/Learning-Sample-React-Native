@@ -8,7 +8,7 @@ import store from '@/store/index';
 
 // navigation
 import { NavigationContainer } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
+import { createStackNavigator,TransitionPresets } from '@react-navigation/stack';
 const Stack = createStackNavigator();
 import RouteConfig from '@/router/config';
 // const AppNavigatorRoot  = createStackNavigator(RouteConfig, StackNavigatorConfig);
@@ -33,7 +33,7 @@ const Main = () => {
         barStyle={'light-content'}
       />
       <NavigationContainer>
-        <Stack.Navigator initialRouteName='Splash'>
+        <Stack.Navigator initialRouteName='Splash' screenOptions={{...TransitionPresets.SlideFromRightIOS}}>
           {routerView}
         </Stack.Navigator>
       </NavigationContainer>
