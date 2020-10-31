@@ -1,5 +1,5 @@
 // react
-import React, {useEffect, useMemo, useState} from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ScrollView,
   View,
@@ -8,16 +8,17 @@ import {
   RefreshControl,
   StyleSheet,
   Image,
-  ImageBackground,
+  ImageBackground, TouchableOpacity, TouchableHighlight
 } from 'react-native';
 
 // redux
-import {useSelector} from 'react-redux';
+import { useSelector } from 'react-redux';
 
 // 组件
 import HeaderBar from '@/components/headerbar/index';
 import Swiper from 'react-native-swiper';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import LoadMore from './LoadMore'
 
 // 工具
 import service from '@/http/service';
@@ -33,12 +34,15 @@ const Main = (props) => {
     {
       icon: <Icon name="home" size={22} color={'#fff'} />,
       event: (e) => {
-        props.navigation.push('Web', {url: 'https://gank.io/'});
+        props.navigation.push('Web', { url: 'https://gank.io/' });
       },
     },
   ];
 
-  // 获取的数据
+  // ---获取的数据
+  const [pageIndex, setPageIndex] = useState(1)
+  // 加载更多的状态
+  const [loadMoreStatus, setLoadMoreStatus] = useState(LoadMore.StatusDefault)
   // 是否正在加载数据
   const [loading, setLoading] = useState(true)
   // 下拉刷新
@@ -85,13 +89,12 @@ const Main = (props) => {
   };
 
   //-----------------获取数据方法-------------------
-  let pageIndex = 1;
   const pageSize = 10;
   /**
    * 获取所有数据
    */
   const getAllData = () => {
-    pageIndex = 1;
+    setPageIndex(1)
     Promise.all([
       service.getBanner(),
       service.getArticleClass(),
@@ -101,11 +104,13 @@ const Main = (props) => {
         setBanner(res[0]);
         setArticle(res[1]);
         // 判断妹纸列表是否还有下一页
-        if(res[2].length>=pageSize) {
+        if (res[2].length >= pageSize) {
           // 说明还有更多
-
-        }else {
-
+          setLoadMoreStatus(LoadMore.StatusDefault)
+          setPageIndex(pageIndex + 1)
+        } else {
+          // 说明没有了
+          setLoadMoreStatus(LoadMore.StatusLoadEnd)
         }
         setGirls(res[2]);
       })
@@ -128,9 +133,26 @@ const Main = (props) => {
   /**
    * 获取妹纸列表
    */
+  const getGirlsData = () => {
+    setLoadMoreStatus(LoadMore.StatusLoading)
+    service.getGirlList(pageIndex, pageSize)
+      .then(res => {
+        const girls = [...dataGirls, ...res]
+        setGirls(girls)
+        if (res.length >= pageSize) {
+          setPageIndex(pageIndex + 1)
+          setLoadMoreStatus(LoadMore.StatusDefault)
+        } else {
+          setLoadMoreStatus(LoadMore.StatusLoadEnd)
+        }
+      })
+      .catch(error => {
+        setLoadMoreStatus(LoadMore.StatusLoadFailed)
+      })
+  }
 
   return (
-    <View>
+    <View style={{ backgroundColor: '#fff' }}>
       <HeaderBar
         title="干货集中营"
         backgroundOpacity={headerbarOpacity}
@@ -151,7 +173,7 @@ const Main = (props) => {
             colors={['#0c4bff']}
           />
         }
-        >
+      >
         <View style={style.header_container}>
           <Image
             style={style.header_img}
@@ -178,50 +200,105 @@ const Main = (props) => {
                 showsButtons={false}
                 showsPagination={false}
                 removeClippedSubviews={false}>
-                {dataBanner.map((item, index) => {
-                  return (
-                    <View
-                      key={index}
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        position: 'relative',
-                      }}>
-                      <ImageBackground
-                        style={{width: '100%', height: '100%'}}
-                        source={require('@/assets/img_default.png')}
-                        resizeMode="cover">
-                        <Image
-                          source={{uri: item.image}}
-                          resizeMode="cover"
-                          style={{width: '100%', height: '100%'}}
-                        />
-                      </ImageBackground>
-                      <Text
+                {
+                  dataBanner.map((item, index) => {
+                    return (
+                      <View
+                        key={index}
                         style={{
-                          position: 'absolute',
-                          left: 10,
-                          bottom: 10,
-                          color: '#fff',
+                          width: '100%',
+                          height: '100%',
+                          position: 'relative',
                         }}>
-                        {item.title}
-                      </Text>
-                    </View>
-                  );
-                })}
+                        <ImageBackground
+                          style={{ width: '100%', height: '100%' }}
+                          source={require('@/assets/img_default.png')}
+                          resizeMode="cover">
+                          <Image
+                            source={{ uri: item.image }}
+                            resizeMode="cover"
+                            style={{ width: '100%', height: '100%' }}
+                          />
+                        </ImageBackground>
+                        <Text
+                          style={{
+                            position: 'absolute',
+                            left: 10,
+                            bottom: 10,
+                            color: '#fff',
+                          }}>
+                          {item.title}
+                        </Text>
+                      </View>
+                    );
+                  })
+                }
               </Swiper>
             </View>
           </View>
         </View>
-        <Text style={style.text}>
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit,sed do eiusmod
-          tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim
-          veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex
-          ea commodo consequat. Duis aute irure dolor in reprehenderit in
-          voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur
-          sint occaecat cupidatat non proident, sunt in culpa qui officia
-          deserunt mollit anim id est laborum.
-        </Text>
+        <View style={style.main_container}>
+          <View style={style.main_title_wrap}>
+            <Text style={style.main_title}>文章分类</Text>
+          </View>
+          <View
+            style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', marginTop: 10 }}>
+            {
+              dataArticle.map((item, index) => {
+                return (
+                  <TouchableHighlight key={item._id} style={{ width: '50%' }}>
+                    <View
+                      style={{ marginTop: 10, marginLeft: index % 2 === 0 ? 0 : 5, marginRight: index % 2 === 0 ? 5 : 0, borderRadius: 10, overflow: 'hidden' }}
+                    >
+                      <Image
+                        source={{ uri: item.coverImageUrl }}
+                        resizeMode="cover"
+                        style={{ width: '100%', height: 90 }}
+                      />
+                    </View>
+                  </TouchableHighlight>
+                )
+              })
+            }
+          </View>
+        </View>
+
+        <View style={style.main_container}>
+          <View style={style.main_title_wrap}>
+            <Text style={style.main_title}>妹纸</Text>
+          </View>
+          <View
+            style={{ marginTop: 10 }}>
+            {
+              dataGirls.map((item, index) => {
+                return (
+                  <TouchableHighlight
+                    key={index}
+                    style={{ padding: 10, marginBottom: 10, backgroundColor: '#f5f5f5', borderRadius: 5 }}>
+                    <View>
+                      <View style={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
+                        <Text style={{ paddingLeft: 8, paddingRight: 8, paddingTop: 5, paddingBottom: 5, borderRadius: 5, backgroundColor: '#2c63ff', color: '#fff', marginRight: 10, fontSize: 14 }}>妹纸</Text>
+                        <Text style={{ fontSize: 18 }}>妹子图{item.title}</Text>
+                      </View>
+                      <View style={{ marginTop: 5 }}>
+                        <Text style={{ fontSize: 16 }} numberOfLines={2}>{item.desc}</Text>
+                      </View>
+                      <View style={{ marginTop: 5 }}>
+                        <ImageBackground source={require('@/assets/img_default.png')} style={{ width: '100%', height: 200 }}>
+                          <Image source={{ uri: item.url }} style={{ width: '100%', height: '100%' }} resizeMode={'cover'} />
+                        </ImageBackground>
+                      </View>
+                      {/* <View style={{ marginTop: 5 }}>
+                        <Text style={{ textAlign: 'right' }}>{item.publishedAt.substring(0, 10)}</Text>
+                      </View> */}
+                    </View>
+                  </TouchableHighlight>
+                )
+              })
+            }
+          </View>
+          <LoadMore status={loadMoreStatus} onLoadMore={getGirlsData} />
+        </View>
       </ScrollView>
     </View>
   );
@@ -249,9 +326,20 @@ const style = StyleSheet.create({
     backgroundColor: '#fff',
     overflow: 'hidden',
   },
-  text: {
-    fontSize: 42,
+  main_container: {
+    padding: 16
   },
+  main_title_wrap: {
+    display: 'flex',
+    alignItems: 'center',
+    flexDirection: 'row'
+  },
+  main_title: {
+    width: 0,
+    flex: 1,
+    fontSize: 18,
+    fontWeight: 'bold'
+  }
 });
 
 export default Main;
