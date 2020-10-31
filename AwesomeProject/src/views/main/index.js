@@ -1,5 +1,5 @@
 // react
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ScrollView,
   View,
@@ -40,7 +40,11 @@ const Main = (props) => {
   ];
 
   // ---获取的数据
-  const [pageIndex, setPageIndex] = useState(1)
+  // const [pageIndex, setPageIndex] = useState(1)
+  let refPageIndex = useRef(1)
+  const setPageIndex = (val) => {
+    refPageIndex.current = val
+  }
   // 加载更多的状态
   const [loadMoreStatus, setLoadMoreStatus] = useState(LoadMore.StatusDefault)
   // 是否正在加载数据
@@ -98,7 +102,7 @@ const Main = (props) => {
     Promise.all([
       service.getBanner(),
       service.getArticleClass(),
-      service.getGirlList(pageIndex, pageSize),
+      service.getGirlList(refPageIndex.current, pageSize),
     ])
       .then((res) => {
         setBanner(res[0]);
@@ -107,7 +111,7 @@ const Main = (props) => {
         if (res[2].length >= pageSize) {
           // 说明还有更多
           setLoadMoreStatus(LoadMore.StatusDefault)
-          setPageIndex(pageIndex + 1)
+          setPageIndex(refPageIndex.current + 1)
         } else {
           // 说明没有了
           setLoadMoreStatus(LoadMore.StatusLoadEnd)
@@ -135,12 +139,12 @@ const Main = (props) => {
    */
   const getGirlsData = () => {
     setLoadMoreStatus(LoadMore.StatusLoading)
-    service.getGirlList(pageIndex, pageSize)
+    service.getGirlList(refPageIndex.current, pageSize)
       .then(res => {
         const girls = [...dataGirls, ...res]
         setGirls(girls)
         if (res.length >= pageSize) {
-          setPageIndex(pageIndex + 1)
+          setPageIndex(refPageIndex.current + 1)
           setLoadMoreStatus(LoadMore.StatusDefault)
         } else {
           setLoadMoreStatus(LoadMore.StatusLoadEnd)
