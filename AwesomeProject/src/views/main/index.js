@@ -1,5 +1,12 @@
 // react
-import React, {useEffect, useMemo, useRef, useState} from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  memo,
+} from 'react';
 import {
   ScrollView,
   View,
@@ -13,6 +20,7 @@ import {
   TouchableHighlight,
   BackHandler,
   Alert,
+  FlatList,
 } from 'react-native';
 
 // redux
@@ -172,6 +180,175 @@ const Main = (props) => {
       });
   };
 
+  //-----------------渲染方法-------------------
+  const renderListHeader = useCallback(() => {
+    return (
+      <>
+        <View style={style.header_container}>
+          <Image
+            style={style.header_img}
+            source={require('@/assets/main/main_header_bg.png')}
+            resizeMode="cover"
+          />
+          <View
+            style={{
+              ...style.header_baner_container,
+              top: headerbar.headerbarHeight,
+            }}>
+            <View
+              style={{
+                ...style.header_baner,
+                height: 300 - headerbar.headerbarHeight - 10,
+              }}>
+              <Swiper
+                key={dataBanner.length}
+                height={300 - headerbar.headerbarHeight - 10}
+                horizontal={true}
+                loop={true}
+                autoplay={true}
+                autoplayTimeout={4}
+                showsButtons={false}
+                showsPagination={false}
+                removeClippedSubviews={false}>
+                {dataBanner.map((item, index) => {
+                  return (
+                    <View
+                      key={index}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        position: 'relative',
+                      }}>
+                      <ImageBackground
+                        style={{width: '100%', height: '100%'}}
+                        source={require('@/assets/img_default.png')}
+                        resizeMode="cover">
+                        <Image
+                          source={{uri: item.image}}
+                          resizeMode="cover"
+                          style={{width: '100%', height: '100%'}}
+                        />
+                      </ImageBackground>
+                      <Text
+                        style={{
+                          position: 'absolute',
+                          left: 10,
+                          bottom: 10,
+                          color: '#fff',
+                        }}>
+                        {item.title}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </Swiper>
+            </View>
+          </View>
+        </View>
+        <View style={style.main_container}>
+          <View style={style.main_title_wrap}>
+            <Text style={style.main_title}>文章分类</Text>
+          </View>
+          <View
+            style={{
+              display: 'flex',
+              flexDirection: 'row',
+              flexWrap: 'wrap',
+              marginTop: 10,
+            }}>
+            {dataArticle.map((item, index) => {
+              return (
+                <TouchableHighlight key={item._id} style={{width: '50%'}}>
+                  <View
+                    style={{
+                      marginTop: 10,
+                      marginLeft: index % 2 === 0 ? 0 : 5,
+                      marginRight: index % 2 === 0 ? 5 : 0,
+                      borderRadius: 10,
+                      overflow: 'hidden',
+                    }}>
+                    <Image
+                      source={{uri: item.coverImageUrl}}
+                      resizeMode="cover"
+                      style={{width: '100%', height: 90}}
+                    />
+                  </View>
+                </TouchableHighlight>
+              );
+            })}
+          </View>
+        </View>
+        <View style={style.main_container}>
+          <View style={style.main_title_wrap}>
+            <Text style={style.main_title}>妹纸</Text>
+          </View>
+        </View>
+      </>
+    );
+  }, [dataBanner, dataArticle, dataGirls]);
+
+  const renderListFooter = () => {
+    return <LoadMore status={loadMoreStatus} onLoadMore={getGirlsData} />;
+  };
+
+  const renderGirlItem = ({item}) => {
+    return (
+      <TouchableHighlight
+        style={{
+          padding: 10,
+          marginBottom: 10,
+          backgroundColor: '#f5f5f5',
+          borderRadius: 5,
+          marginLeft: 16,
+          marginRight: 16,
+        }}>
+        <View>
+          <View
+            style={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+            }}>
+            <Text
+              style={{
+                paddingLeft: 8,
+                paddingRight: 8,
+                paddingTop: 5,
+                paddingBottom: 5,
+                borderRadius: 5,
+                backgroundColor: '#2c63ff',
+                color: '#fff',
+                marginRight: 10,
+                fontSize: 14,
+              }}>
+              妹纸
+            </Text>
+            <Text style={{fontSize: 18}}>妹子图{item.title}</Text>
+          </View>
+          <View style={{marginTop: 5}}>
+            <Text style={{fontSize: 16}} numberOfLines={2}>
+              {item.desc}
+            </Text>
+          </View>
+          <View style={{marginTop: 5}}>
+            <ImageBackground
+              source={require('@/assets/img_default.png')}
+              style={{width: '100%', height: 200}}>
+              <Image
+                source={{uri: item.url}}
+                style={{width: '100%', height: '100%'}}
+                resizeMode={'cover'}
+              />
+            </ImageBackground>
+          </View>
+          {/* <View style={{ marginTop: 5 }}>
+              <Text style={{ textAlign: 'right' }}>{item.publishedAt.substring(0, 10)}</Text>
+            </View> */}
+        </View>
+      </TouchableHighlight>
+    );
+  };
+
   if (loading) {
     return <Loading />;
   } else {
@@ -184,10 +361,13 @@ const Main = (props) => {
           backEvent={clickBack}
           menu={headerbarMenu}
         />
-        <ScrollView
+        <FlatList
+          data={dataGirls}
+          keyExtractor={(item) => item._id}
+          renderItem={renderGirlItem}
+          ListHeaderComponent={renderListHeader}
+          ListFooterComponent={renderListFooter}
           onScroll={onScrollViewScroll}
-          // 是否显示滚动条
-          showsVerticalScrollIndicator={false}
           // 下拉刷新
           refreshControl={
             <RefreshControl
@@ -196,167 +376,8 @@ const Main = (props) => {
               progressViewOffset={headerbar.statusbarHeight}
               colors={['#0c4bff']}
             />
-          }>
-          <View style={style.header_container}>
-            <Image
-              style={style.header_img}
-              source={require('@/assets/main/main_header_bg.png')}
-              resizeMode="cover"
-            />
-            <View
-              style={{
-                ...style.header_baner_container,
-                top: headerbar.headerbarHeight,
-              }}>
-              <View
-                style={{
-                  ...style.header_baner,
-                  height: 300 - headerbar.headerbarHeight - 10,
-                }}>
-                <Swiper
-                  key={dataBanner.length}
-                  height={300 - headerbar.headerbarHeight - 10}
-                  horizontal={true}
-                  loop={true}
-                  autoplay={true}
-                  autoplayTimeout={4}
-                  showsButtons={false}
-                  showsPagination={false}
-                  removeClippedSubviews={false}>
-                  {dataBanner.map((item, index) => {
-                    return (
-                      <View
-                        key={index}
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          position: 'relative',
-                        }}>
-                        <ImageBackground
-                          style={{width: '100%', height: '100%'}}
-                          source={require('@/assets/img_default.png')}
-                          resizeMode="cover">
-                          <Image
-                            source={{uri: item.image}}
-                            resizeMode="cover"
-                            style={{width: '100%', height: '100%'}}
-                          />
-                        </ImageBackground>
-                        <Text
-                          style={{
-                            position: 'absolute',
-                            left: 10,
-                            bottom: 10,
-                            color: '#fff',
-                          }}>
-                          {item.title}
-                        </Text>
-                      </View>
-                    );
-                  })}
-                </Swiper>
-              </View>
-            </View>
-          </View>
-          <View style={style.main_container}>
-            <View style={style.main_title_wrap}>
-              <Text style={style.main_title}>文章分类</Text>
-            </View>
-            <View
-              style={{
-                display: 'flex',
-                flexDirection: 'row',
-                flexWrap: 'wrap',
-                marginTop: 10,
-              }}>
-              {dataArticle.map((item, index) => {
-                return (
-                  <TouchableHighlight key={item._id} style={{width: '50%'}}>
-                    <View
-                      style={{
-                        marginTop: 10,
-                        marginLeft: index % 2 === 0 ? 0 : 5,
-                        marginRight: index % 2 === 0 ? 5 : 0,
-                        borderRadius: 10,
-                        overflow: 'hidden',
-                      }}>
-                      <Image
-                        source={{uri: item.coverImageUrl}}
-                        resizeMode="cover"
-                        style={{width: '100%', height: 90}}
-                      />
-                    </View>
-                  </TouchableHighlight>
-                );
-              })}
-            </View>
-          </View>
-
-          <View style={style.main_container}>
-            <View style={style.main_title_wrap}>
-              <Text style={style.main_title}>妹纸</Text>
-            </View>
-            <View style={{marginTop: 10}}>
-              {dataGirls.map((item, index) => {
-                return (
-                  <TouchableHighlight
-                    key={index}
-                    style={{
-                      padding: 10,
-                      marginBottom: 10,
-                      backgroundColor: '#f5f5f5',
-                      borderRadius: 5,
-                    }}>
-                    <View>
-                      <View
-                        style={{
-                          display: 'flex',
-                          flexDirection: 'row',
-                          alignItems: 'center',
-                        }}>
-                        <Text
-                          style={{
-                            paddingLeft: 8,
-                            paddingRight: 8,
-                            paddingTop: 5,
-                            paddingBottom: 5,
-                            borderRadius: 5,
-                            backgroundColor: '#2c63ff',
-                            color: '#fff',
-                            marginRight: 10,
-                            fontSize: 14,
-                          }}>
-                          妹纸
-                        </Text>
-                        <Text style={{fontSize: 18}}>妹子图{item.title}</Text>
-                      </View>
-                      <View style={{marginTop: 5}}>
-                        <Text style={{fontSize: 16}} numberOfLines={2}>
-                          {item.desc}
-                        </Text>
-                      </View>
-                      <View style={{marginTop: 5}}>
-                        <ImageBackground
-                          source={require('@/assets/img_default.png')}
-                          style={{width: '100%', height: 200}}>
-                          <Image
-                            source={{uri: item.url}}
-                            style={{width: '100%', height: '100%'}}
-                            resizeMode={'cover'}
-                          />
-                        </ImageBackground>
-                      </View>
-                      {/* <View style={{ marginTop: 5 }}>
-                          <Text style={{ textAlign: 'right' }}>{item.publishedAt.substring(0, 10)}</Text>
-                        </View> */}
-                    </View>
-                  </TouchableHighlight>
-                );
-              })}
-            </View>
-            <LoadMore status={loadMoreStatus} onLoadMore={getGirlsData} />
-          </View>
-        </ScrollView>
+          }
+        />
       </View>
     );
   }
